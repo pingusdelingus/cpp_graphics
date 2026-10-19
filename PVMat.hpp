@@ -45,6 +45,7 @@ class PV {
         PV times(f32 that);
         f32 dot(PV& that);
         PV cross(PV& that);
+        f32 dot(PV that);
         f32 magnitude();
         f32 distance(PV& that);
         PV unit();
@@ -55,24 +56,22 @@ class PV {
 
         f32& operator[](i32 index)
         {
-        if (index < 0 || index >= 5) {
-            throw std::out_of_range("Index out of bounds!");
-        }else{
             switch( index ){
                 case 0: return x;
                 case 1: return y;
                 case 2: return z;
                 case 3: return w;
-            }
+                default: throw std::out_of_range("Index out of bounds!");
         }
     }
 
 };
 
 
+
 class Mat
 {
-
+    public:
     f32 data[4][4];
     Mat(b8 t)
     {
@@ -128,7 +127,16 @@ class Mat
 }
 
 
-};
+
+
+
+    Mat transpose();
+
+    static Mat rotation(i32 axes, f32 angle);
+    static Mat translation(PV &v);
+    static Mat scale(PV& v);
+    static Mat scale(f32 s);
+}; // end of mat class
 
 
 

@@ -30,6 +30,12 @@ f32 PV::dot(PV& that)
 }
 
 
+f32 PV::dot(PV that)
+{
+    return (this->x * that.x + this->y * that.y + this->z * that.z + this->w * that.w);
+}
+
+
 PV PV::cross(PV& that)
 {
             return *(new PV(this->y * that.z - this->z * that.y,
@@ -40,7 +46,7 @@ PV PV::cross(PV& that)
 
 f32 PV::magnitude()
 {
-    return std::sqrt(this->dot(&this));
+    return std::sqrt(this->dot((PV*)this));
 }
 
 
@@ -120,10 +126,78 @@ Mat Mat::times(Mat& that)
     for (i32 i =0; i < 4; i++){
         for (i32 j = 0; j < 4; j++){
             for (i32 k = 0; k < 4; k++ ){
-                m[i][j] += this->data[i][k] * that.data[k][j]
+                m[i][j] += this->data[i][k] * that.data[k][j];
             }
         }
     }
+
+    return m;
+}
+
+
+
+Mat Mat::transpose()
+{
+    Mat res(false);
+
+    for (i32 i = 0; i < 4; i++){
+        for (i32 j = 0; j < 4; j++){
+            res[i][j] = this->data[j][i];
+        }
+    }
+    return res;
+}
+
+
+
+Mat Mat::rotation(i32 axes, f32 angle)
+{
+    Mat mat(false);
+    i32 i = axes;
+    i32 j = (i + 1) % 3;
+    i32 k = (i + 2) % 3;
+    mat[j][j] = std::cos(angle);
+    mat[k][j] = std::sin(angle);
+    mat[j][k] = -mat[k][j];
+    mat[k][k] = mat[j][j];
+
+    return mat;
+}
+
+
+Mat Mat::translation(PV& p)
+{
+    Mat mat(true);
+    for (i32 i = 0; i < 3; i++){
+        mat[i][3] = p[i];
+    }
+    return mat;
+
+
+}
+
+
+
+Mat Mat::scale(PV& p)
+{
+    Mat mat(true);
+    for (i32 i = 0; i < 3; i++){
+        mat[i][i] = p[i];
+    }
+    return mat;
+
+
+}
+
+
+
+Mat Mat::scale(f32 scale)
+{
+    Mat mat(true);
+    for (i32 i = 0; i < 3; i++){
+        mat[i][i] = scale;
+    }
+    return mat;
 
 
 }
