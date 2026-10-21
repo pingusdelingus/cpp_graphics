@@ -5,139 +5,175 @@
 #include "rstdlib.hpp"
 #include <array>
 #include <iostream>
-class PV {
+
+
+
+class PV2 {
+    public:
+        f32 x = 0;
+        f32 y = 0;
+
+        PV2(bool t );
+
+        PV2(f32 a, f32 b );
+
+
+
+        friend std::ostream& operator <<(std::ostream& os, const PV2& p){
+            os <<"<" << p.x << ", " << p.y << "> ";
+            return os;
+        };
+
+        PV2 plus(PV2& that);
+        PV2 minus(PV2& that);
+        PV2 times(PV2& that);
+        PV2 times(f32 that);
+        f32 dot(PV2& that);
+        f32 cross(PV2& that);
+        f32 determinant(PV2& that);
+        f32 dot(PV2 that);
+        f32 magnitude();
+        f32 distance(PV2& that);
+        PV2 unit();
+        void unitize();
+
+
+        f32& operator[](i32 index);
+
+}; // end of PV2 class
+
+// start
+class PV3 {
+    public:
+        f32 x = 0;
+        f32 y = 0;
+        f32 z = 0;
+
+        PV3(bool t );
+
+        PV3(f32 a, f32 b ,f32 c);
+
+        PV2 xy();
+        PV2 yz();
+        PV2 zx();
+
+        friend std::ostream& operator <<(std::ostream& os, const PV3& p){
+            os <<"<" << p.x << ", " << p.y << ", " << p.z << ">";
+            return os;
+        };
+
+        PV3 plus(PV3& that);
+        PV3 minus(PV3& that);
+        PV3 times(PV3& that);
+        PV3 times(f32 that);
+        f32 dot(PV3& that);
+        PV3 cross(PV3& that);
+        f32 dot(PV3 that);
+        f32 magnitude();
+        f32 distance(PV3& that);
+        PV3 unit();
+        void unitize();
+
+
+        f32& operator[](i32 index);
+
+}; // end of PV3 class
+
+class PV4 {
     public:
         f32 x = 0;
         f32 y = 0;
         f32 z = 0;
         f32 w = 0;
 
-        PV(bool t ){
-            x = 0;
-            y = 0;
-            z = 0;
-            if (t){
-                w = 1;
-            }else{
-            w = 0;
+        PV4(bool t );
 
-        }
-        }
-        PV(f32 a, f32 b ,f32 c, f32 d){
-            x = a;
-            y = b;
-            z = c;
-            w = d;
-        }
+        PV4(f32 a, f32 b ,f32 c, f32 d);
 
 
     b8 isPoint() {return this->w > 0 ;};
     b8 isVector() {return this->w == 0 ;};
 
-        friend std::ostream& operator <<(std::ostream& os, const PV& p){
-            os << p.x << " " << p.y << " " << p.z << " " << p.w;
+        friend std::ostream& operator <<(std::ostream& os, const PV4& p){
+            os <<"<" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ">";
             return os;
         };
 
-        PV plus(PV& that);
-        PV minus(PV& that);
-        PV times(PV& that);
-        PV times(f32 that);
-        f32 dot(PV& that);
-        PV cross(PV& that);
-        f32 dot(PV that);
+        PV4 plus(PV4& that);
+        PV4 minus(PV4& that);
+        PV4 times(PV4& that);
+        PV4 times(f32 that);
+        f32 dot(PV4& that);
+        PV4 cross(PV4& that);
+        f32 dot(PV4 that);
         f32 magnitude();
-        f32 distance(PV& that);
-        PV unit();
+        f32 distance(PV4& that);
+        PV4 unit();
         void unitize();
-        PV homogeneous();
+        PV4 homogeneous();
         void homogenize();
 
 
-        f32& operator[](i32 index)
-        {
-            switch( index ){
-                case 0: return x;
-                case 1: return y;
-                case 2: return z;
-                case 3: return w;
-                default: throw std::out_of_range("Index out of bounds!");
-        }
-    }
+        f32& operator[](i32 index);
 
-};
+}; // end of PV4 class
 
-
+#include <iomanip>
 
 class Mat
 {
     public:
     f32 data[4][4];
-    Mat(b8 t)
-    {
-        for (i32 i = 0; i < 4; i++){
-            for (i32 j = 0; j < 4; j++){
-                if (i != j){
-                    data[i][j] = 0.0f;
-                }else{
-                    data[i][j] = 1.0f * t;
-                }
+
+
+        friend std::ostream& operator <<(std::ostream& os, const Mat& m)
+        {
+            for (i32 i = 0; i < 4; i++) {
+                os << "[";
+            for (i32 j = 0; j < 4; j++) {
+                os << std::fixed << std::setprecision(2) << m.data[i][j] << (j == 3 ? "" : " ");
             }
+            os << "]";
+            os << "\n";
         }
-    }
+        return os;
+        }
 
-    Mat(PV c0, PV c1, PV c2, PV c3)
-    {
-        data[0][0] = c0.x;
-        data[0][1] = c0.y;
-        data[0][2] = c0.z;
-        data[0][3] = c0.w;
+    Mat();
+    Mat(b8 t);
 
-        data[1][0] = c1.x;
-        data[1][1] = c1.y;
-        data[1][2] = c1.z;
-        data[1][3] = c1.w;
+    Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3);
 
-        data[2][0] = c2.x;
-        data[2][1] = c2.y;
-        data[2][2] = c2.z;
-        data[2][3] = c2.w;
-
-        data[3][0] = c3.x;
-        data[3][1] = c3.y;
-        data[3][2] = c3.z;
-        data[3][3] = c3.w;
-    }
-
-    PV times(PV& that);
+    PV4 times(PV4& that);
     Mat times(Mat& that);
 
 
-    f32* operator[](i32 row )
-    {
-        switch(row){
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                return data[row];
-            default:
-            throw std::out_of_range("Index out of bounds!");
-        }
-}
-
-
-
-
+    f32* operator[](i32 row );
+    Mat operator*(const Mat& that);
+    Mat operator*(const f32 s);
+    PV4 operator*(PV4& that);
+    Mat operator+(const Mat& that);
+    Mat operator+(const f32 s);
 
     Mat transpose();
 
     static Mat rotation(i32 axes, f32 angle);
-    static Mat translation(PV &v);
-    static Mat scale(PV& v);
+    static Mat translation(PV4 &v);
+    static Mat translation(f32 t);
+    static Mat scale(PV4& v);
     static Mat scale(f32 s);
 }; // end of mat class
 
+
+PV2 normalize(PV2 a);
+PV3 normalize(PV3 a);
+PV4 normalize(PV4 a);
+
+f32 dot(PV2 a, PV2 b);
+f32 dot(PV3 a, PV3 b);
+f32 dot(PV4 a, PV4 b);
+
+Mat transpose(Mat a);
 
 
 #endif // PVMAT_H_
