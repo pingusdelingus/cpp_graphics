@@ -2,8 +2,16 @@
 
 #define RSTDLIB_HEADER
 
-#include <cstdint>
-#include <cstdlib>
+#ifdef __cplusplus
+    #include <cstdint>
+    #include <cstdlib>
+#endif
+
+#ifndef __cplusplus
+    #include <stdint.h>
+    #include <stdlib.h>
+#endif
+
 
 typedef int8_t i8;
 typedef int16_t i16;
