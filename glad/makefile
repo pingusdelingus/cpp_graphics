@@ -17,14 +17,18 @@ LDFLAGS = -L$(BREW_PREFIX)/lib -lglfw \
 
 all: opengl_app
 
-opengl_app: m.o glad.o
-	$(CXX) m.o glad.o -o opengl_app $(LDFLAGS)
+opengl_app: m.o glad.o PVMat.o
+	$(CXX) PVMat.o m.o glad.o -o opengl_app $(LDFLAGS)
 
 m.o: m.cpp
 	$(CXX) $(CXXFLAGS) -c m.cpp -o m.o
 
 glad.o: ./src/glad.c
 	$(CC) $(CFLAGS) -c ./src/glad.c -o glad.o
+
+PVMat.o: PVMat.cpp
+	$(CC) $(CFLAGS) -c ./PVMat.cpp -o PVMat.o
+
 
 clean:
 	rm -f *.o opengl_app

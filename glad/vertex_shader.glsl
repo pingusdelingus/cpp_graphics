@@ -1,7 +1,7 @@
-
+#version 410 core
 in vec4 vPosition;
 uniform float dummy;
-
+// vertex shdr
 void
 main()
 {
