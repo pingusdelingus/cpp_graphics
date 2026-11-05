@@ -4,27 +4,12 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <cassert>
 #include "./rstdlib.hpp"
 #include "PVMat.hpp"
-
-
-
-
-
-
-std::string readShader(const char* filepath)
-{
-    std::ifstream file (filepath);
-
-    if (!file.is_open()){
-        return "";
-    }
-
- std::string res((std::istreambuf_iterator<char>(file)),
-                     std::istreambuf_iterator<char>());
-
-    return res;
-}
+#include "InitShaders.hpp"
+#include "Callbacks.hpp"
+#include "Tux.hpp" // contains tux model
 
 
 PV4 vertices[] = {
@@ -42,19 +27,108 @@ std::array<PV4, 4> verts = {
 };
 
 
+    std::array<PV4, 3>tri_colors = {
+        PV4(1.0, 0.0 ,0.0, 1.0), // Red
+        PV4(0.0, 1.0 ,0.0, 1.0), // Green
+        PV4(0.0, 0.0 ,1.0, 1.0), // Blue
+    };
+
+
+std::array<PV4, 3> tri_verts = {
+        PV4{ -0.75, -0.75,  0.5,1},
+        PV4{  0.75, -0.75,  0.5 ,1},
+        PV4{  0.0,   0.25, -0.5, 1 }
+};
+
+
+
+constexpr u32 HEIGHT = 9 * 66.6f;
+constexpr u32 WIDTH = 16 * 66.6f;
+constexpr u32 STRIDE = 0;
+
 b8 dummy = 1;
+f32 theta = 0.0f;
+b8 using_perspective = false;
 
 
-void k_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_K && action == GLFW_PRESS) {
-        // 'K' was just pressed down
-        dummy = !dummy;
-    }
+b8 isClicked = false;
+f32 clickX = 0.0f;
+f32 clickY = 0.0f;
+
+constexpr Mat canvas2clip =
+    Mat::translation(PV4{-1.0, +1.0, 0.0, 0.0}) *
+    Mat::scale(PV4 {2.0 / WIDTH, -2.0 / HEIGHT, 1, 1 });
+constexpr Mat clip2canvas =
+    Mat::scale(PV4{WIDTH / 2.0, -(HEIGHT / 2.0), 1, 1}) *
+    Mat::translation(PV4{+1, -1, 0, 0});
+
+Mat proj2clip{};
+Mat clip2proj{};
+
+Mat view2proj{};
+Mat proj2view{};
+
+Mat view2world{};
+Mat world2view{};
+
+Mat world2rotated{};
+Mat rotated2world{};
+
+Mat rotated2object{};
+Mat object2rotated{};
+
+Mat object2model{};
+Mat model2object{};
+
+Mat model2clip{};
+Mat clip2model{};
+
+
+PV4 translation_vec{0.0, 0.0, 0.0, 0.0};
+
+constexpr Mat id{true};
+
+
+std::vector<GLuint> flat_indices{};
+
+PV4 pointmodel2clip(const PV4& point)
+{
+    return proj2clip * (view2proj * (world2view * (rotated2world * (object2rotated * (model2object * point)))));
 }
+
+PV4 pointclip2model(const PV4& point)
+{
+    return object2model * (rotated2object * (world2rotated * (view2world * (proj2view * clip2proj * point))));
+}
+
+void updateM2C()
+{
+    model2clip = proj2clip * (view2proj * (world2view * (rotated2world * (object2rotated * (model2object )))));
+    clip2model = object2model * (rotated2object * (world2rotated * (view2world * (proj2view * clip2proj))));
+    assert(model2clip * clip2model == id && "Model2Clip * Clip2Model != identity matrix")
+}
+
+void orthographic_transform()
+{
+
+
+
+
+}
+
 
 
 int main()
 {
+
+    assert((canvas2clip * clip2canvas )== id);
+    flat_indices.reserve(penger_fs.size() * 3);
+    for (const PV4& face : penger_fs) {
+        flat_indices.push_back(static_cast<GLuint>(face.x));
+        flat_indices.push_back(static_cast<GLuint>(face.y));
+        flat_indices.push_back(static_cast<GLuint>(face.z));
+    }
+
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -68,8 +142,9 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on macOS
 
     // Create a window
-    GLFWwindow* window = glfwCreateWindow(800, 600, "da window", NULL, NULL);
-    glfwSetKeyCallback(window, k_callback);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "da window", NULL, NULL);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -86,71 +161,72 @@ int main()
 
     GLuint program = glad_glCreateProgram();
     GLuint vertShdr = glad_glCreateShader( GL_VERTEX_SHADER );
-    std::string vertContent = readShader("./vertex_shader.glsl");
-    const char* rawVert = (vertContent.c_str() );
-    GLint vertLen = vertContent.size();
-    glad_glShaderSource( vertShdr, 1, (&rawVert) , (&vertLen));
-    glCompileShader(vertShdr);
-    GLint success;
-    char infoLog[512];
-    glGetShaderiv(vertShdr, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertShdr, 512, NULL, infoLog);
-        std::cerr << "ERROR::VERTEX_SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    std::string fragContent = readShader("./fragment_shader.glsl");
-    GLint fragLen = fragContent.size();
-    const char* rawFrag = (fragContent.c_str() );
     GLuint fragShdr = glad_glCreateShader( GL_FRAGMENT_SHADER );
-    glad_glShaderSource( fragShdr, 1, (&rawFrag) , (&fragLen));
-    glCompileShader(fragShdr);
-    glGetShaderiv(fragShdr, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragShdr, 512, NULL, infoLog);
-        std::cerr << "ERROR::FRAGMENT_SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
 
-    glad_glAttachShader(program, vertShdr );
-    glad_glAttachShader(program, fragShdr );
+    init_shader(program, vertShdr, fragShdr, "./vertex_shader.glsl", "./fragment_shader.glsl");
 
-    glLinkProgram(program);
-
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        std::cerr << "ERROR::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
     glad_glUseProgram( program );
 
     GLuint vao; // vertex array object...
     glGenVertexArrays(1, &vao);
     glad_glBindVertexArray(vao);
 
-    GLuint buffer_id;
-    glad_glGenBuffers(1, &buffer_id);
+//    GLuint tri_buffer_color;
+//    glad_glGenBuffers(1, &tri_buffer_color);
+//    glad_glBindBuffer(GL_ARRAY_BUFFER, tri_buffer_color);
+//    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(PV4) * tri_colors.size(), std::data(tri_colors), GL_STATIC_DRAW);
 
-    glad_glBindBuffer( GL_ARRAY_BUFFER, buffer_id );
-    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(PV4) * verts.size() , std::data(verts), GL_STATIC_DRAW);
+    // setup the vertex buffer
+    GLuint penger_verts_buff;
+    glad_glGenBuffers(1, &penger_verts_buff);
+    glad_glBindBuffer( GL_ARRAY_BUFFER, penger_verts_buff );
+    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(PV4) * penger_verts.size() , std::data(penger_verts), GL_STATIC_DRAW);
 
     GLuint vPosition = glad_glGetAttribLocation(program, "vPosition");
-
-    glad_glVertexAttribPointer( vPosition, 4, GL_FLOAT, GL_FALSE , 0,(void*) 0 );
+    glad_glVertexAttribPointer( vPosition, 4, GL_FLOAT, GL_FALSE , STRIDE,(void*) 0 );
     glad_glEnableVertexAttribArray(vPosition);
 
+
+    // setup faces buffer
+    GLuint penger_fs_buff;
+    glad_glGenBuffers(1, &penger_fs_buff);
+    glad_glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, penger_fs_buff );
+
+glad_glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * flat_indices.size(), flat_indices.data(), GL_STATIC_DRAW);
+//    glad_glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(PV4) * penger_fs.size() , std::data(penger_fs),GL_STATIC_DRAW);
+
+    glad_glBindVertexArray(0);
+
+    // uniforms
+    GLuint translationLoc = glad_glGetAttribLocation(program, "translation");
     GLuint dummyLoc = glad_glGetUniformLocation(program, "dummy");
+    GLuint thetaLoc = glad_glGetUniformLocation(program, "theta");
 
     // Main Render Loop
     while (!glfwWindowShouldClose(window)) {
         // Clear screen with a color (Dark Teal)
-//        glClearColor(0.1f, 0.4f, 0.4f, 1.0f);
+        //        glClearColor(0.1f, 0.4f, 0.4f, 1.0f);
+        //
+
+
         glad_glClear(GL_COLOR_BUFFER_BIT);
         glad_glUniform1f(dummyLoc, dummy);
-        glad_glDrawArrays(GL_TRIANGLE_FAN, 0, verts.size() );
+        glad_glUniform1f(thetaLoc, theta);
+        glad_glUniform4f(translationLoc, translation_vec.x, translation_vec.y, 0.0f, 0.0f);
+        glad_glBindVertexArray(vao);
+
+        glad_glDrawElements(GL_TRIANGLES, flat_indices.size(), GL_UNSIGNED_INT, 0);
         // Swap buffers and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (dummy)
+            theta += 0.01;
+        else
+            theta -= 0.01;
     }
+
+
     glad_glDeleteVertexArrays(1, &vao);
     glfwTerminate();
     return 0;

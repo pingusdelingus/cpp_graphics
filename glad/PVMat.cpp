@@ -226,14 +226,6 @@ void PV3::unitize()
 }
 
 // ------------------------------------------------------------------------------------------------------------------------
-PV4::PV4(f32 a, f32 b ,f32 c, f32 d)
-{
-    x = a;
-    y = b;
-    z = c;
-    w = d;
-}
-
 
 PV4::PV4(bool t ){
             x = 0;
@@ -372,7 +364,7 @@ f32* Mat::operator[](i32 row )
             throw std::out_of_range("Index out of bounds!");
         }
 }
-Mat::Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3)
+constexpr Mat::Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3)
     {
         data[0][0] = c0.x;
         data[0][1] = c0.y;
@@ -394,7 +386,8 @@ Mat::Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3)
         data[3][2] = c3.z;
         data[3][3] = c3.w;
     }
-Mat::Mat()
+/*
+ constexpr Mat::Mat()
 {
         for (i32 i = 0; i < 4; i++){
             for (i32 j = 0; j < 4; j++){
@@ -420,6 +413,7 @@ Mat::Mat(b8 t)
         }
     }
 
+*/
 
 PV4 Mat::times(PV4& that)
 {
@@ -482,7 +476,7 @@ Mat Mat::rotation(i32 axes, f32 angle)
 }
 
 
-Mat Mat::translation(f32 t)
+/*Mat Mat::translation(f32 t)
 {
     Mat mat(true);
     for (i32 i = 0; i < 3; i++){
@@ -492,8 +486,10 @@ Mat Mat::translation(f32 t)
 
 
 }
+*/
 
-PV4 Mat::operator*(PV4& that)
+
+/*PV4 Mat::operator*(PV4& that)
 {
     PV4 res(false);
     f32 sum = 0.0f;
@@ -505,10 +501,22 @@ PV4 Mat::operator*(PV4& that)
         sum = 0.0f;
     }
     return res;
+} */
+
+PV4 PV4::operator+(const PV4& that)
+{
+    PV4 result(false);
+
+    result.x = this->x + that.x;
+    result.y = this->y + that.y;
+    result.z = this->z + that.z;
+    result.w = this->w + that.w;
+    return result;
 }
 
 
-Mat Mat::operator+(const f32 s )
+
+constexpr Mat Mat::operator+(const f32 s )
 {
     Mat m(false);
     for (i32 i =0; i < 4; i++){
@@ -523,7 +531,7 @@ Mat Mat::operator+(const f32 s )
 }
 
 
-Mat Mat::operator+(const Mat& that)
+constexpr Mat Mat::operator+(const Mat& that)
 {
     Mat m(false);
     for (i32 i =0; i < 4; i++){
@@ -537,7 +545,7 @@ Mat Mat::operator+(const Mat& that)
 }
 
 
-Mat Mat::operator*(const f32 s)
+constexpr Mat Mat::operator*(const f32 s)
 {
     Mat m(false);
     for (i32 i =0; i < 4; i++){
@@ -550,8 +558,22 @@ Mat Mat::operator*(const f32 s)
 }
 
 
+/*constexpr Mat Mat::operator==(const Mat& that)
+{
+    for (i32 i =0; i < 4; i++){
+        for (i32 j = 0; j < 4; j++){
+            if (this->data[i][j] != that.data[i][j]){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+*/
 
-Mat Mat::operator*(const Mat& that)
+
+/*
+constexpr Mat Mat::operator*(const Mat& that)
 {
     Mat m(false);
     for (i32 i =0; i < 4; i++){
@@ -564,32 +586,8 @@ Mat Mat::operator*(const Mat& that)
 
     return m;
 }
+*/
 
-
-
-Mat Mat::translation(PV4& p)
-{
-    Mat mat(true);
-    for (i32 i = 0; i < 3; i++){
-        mat[i][3] = p[i];
-    }
-    return mat;
-
-
-}
-
-
-
-Mat Mat::scale(PV4& p)
-{
-    Mat mat(true);
-    for (i32 i = 0; i < 3; i++){
-        mat[i][i] = p[i];
-    }
-    return mat;
-
-
-}
 
 
 

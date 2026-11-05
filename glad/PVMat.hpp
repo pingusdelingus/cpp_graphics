@@ -88,7 +88,8 @@ class PV4 {
 
         PV4(bool t );
 
-        PV4(f32 a, f32 b ,f32 c, f32 d);
+        constexpr PV4(f32 a, f32 b ,f32 c, f32 d)
+            : x(a), y(b), z(c), w(d){}
 
 
     b8 isPoint() {return this->w > 0 ;};
@@ -114,7 +115,9 @@ class PV4 {
         void homogenize();
 
 
+
         f32& operator[](i32 index);
+        PV4 operator+(const PV4& that );
 
 }; // end of PV4 class
 
@@ -123,8 +126,7 @@ class PV4 {
 class Mat
 {
     public:
-    f32 data[4][4];
-
+        f32 data[4][4]{};
 
         friend std::ostream& operator <<(std::ostream& os, const Mat& m)
         {
@@ -139,28 +141,75 @@ class Mat
         return os;
         }
 
-    Mat();
-    Mat(b8 t);
+        constexpr Mat(): Mat(true) {};
+        constexpr Mat(b8 isId)
+        {
+            for (i32 i = 0; i < 4; i++){
+                data[i][i] = isId ? 1.0f : 0.0f;
+            }
+        }
 
-    Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3);
+    constexpr Mat(PV4 c0, PV4 c1, PV4 c2, PV4 c3);
 
     PV4 times(PV4& that);
     Mat times(Mat& that);
 
 
     f32* operator[](i32 row );
-    Mat operator*(const Mat& that);
-    Mat operator*(const f32 s);
-    PV4 operator*(PV4& that);
-    Mat operator+(const Mat& that);
-    Mat operator+(const f32 s);
+        constexpr Mat operator*(const Mat& that) const
+        {
+            Mat result(false);
+            for (int row = 0; row < 4; ++row) {
+                for (int col = 0; col < 4; ++col) {
+                    for (int k = 0; k < 4; ++k)
+                        result.data[row][col] += data[row][k] * that.data[k][col];
+                }
+            }
+            return result;
+        }
+    constexpr Mat operator*(const f32 s);
+        PV4 operator*(const PV4& that)
+        {
+            PV4 res(false);
+            for (i32 i = 0; i < 4; i++){
+                res[i] = this->data[i][0] * that.x +  this->data[i][1] * that.y + this->data[i][2] * that.z + this->data[i][3] * that.w;
+            }
+            return res;
+
+        }
+    constexpr Mat operator+(const Mat& that);
+    constexpr Mat operator+(const f32 s);
+        constexpr b8 operator==(const Mat& that) const
+        {
+            for (int row = 0; row < 4; ++row) {
+                    for (int col = 0; col < 4; ++col) {
+                        if ( std::abs (data[row][col] - that.data[row][col]) >  1e-4)
+                            return false;
+                    }
+                }
+                return true;
+        }
 
     Mat transpose();
 
     static Mat rotation(i32 axes, f32 angle);
-    static Mat translation(PV4 &v);
-    static Mat translation(f32 t);
-    static Mat scale(PV4& v);
+    static constexpr Mat translation(const PV4 &v)
+        {
+            Mat m(true);
+            m.data[0][3] = v.x;
+            m.data[1][3] = v.y;
+            m.data[2][3] = v.z;
+            return m;
+        }
+        static Mat translation(f32 t);
+        static constexpr Mat scale(const PV4& v)
+        {
+            Mat m(true);
+            m.data[0][0] = v.x;
+            m.data[1][1] = v.y;
+            m.data[2][2] = v.z;
+            return m;
+        }
     static Mat scale(f32 s);
 }; // end of mat class
 
